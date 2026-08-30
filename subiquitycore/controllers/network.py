@@ -415,7 +415,9 @@ class BaseNetworkController(BaseController):
         dev.remove_ip_networks_for_version(ip_version)
         dev.config.setdefault("addresses", []).extend(static_config.addresses)
         if static_config.gateway:
-            dev.config["routes"] = [{"to": "default", "via": static_config.gateway}]
+            dev.config.setdefault("routes", []).append(
+                {"to": "default", "via": static_config.gateway}
+            )
         else:
             dev.remove_routes(ip_version)
         ns = dev.config.setdefault("nameservers", {})

@@ -21,7 +21,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.models.network import NetworkModel
 from subiquity.server.controllers.network import NetworkController
-from subiquitycore.models.network import NetworkDev
+from subiquitycore.models.network import NetworkDev, StaticConfig
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -61,6 +61,34 @@ class TestNetworkController(SubiTestCase):
         )
 
         JsonValidator.check_schema(NetworkController.autoinstall_schema)
+
+    @parameterized.expand(((4, 6), (6, 4)))
+    def test_set_static_config_preserves_other_family_default_route(self, first_version, second_version):
+        self.controller.model = NetworkModel()
+        dev = NetworkDev(self.controller.model, "testdev0", "eth")
+        self.controller.model.devices_by_name["testdev0"] = dev
+        self.controller.update_link = Mock()
+        self.controller.apply_config = Mock()
+
+        configs = {
+            4: StaticConfig(
+                addresses=["192.0.2.2/24"],
+                gateway="192.0.2.1",
+            ),
+            6: StaticConfig(
+                addresses=["2001:db8::2/64"],
+                gateway="2001:db8::1",
+            ),
+        }
+
+        for ip_version in (first_version, second_version):
+            self.controller.set_static_config("testdev0", ip_version, configs[ip_version])
+
+        expected_routes = [
+            {"to": "default", "via": configs[ip_version].gateway}
+            for ip_version in (first_version, second_version)
+        ]
+        self.assertCountEqual(expected_routes, dev.config["routes"])
 
 
 class TestNetworkAutoDisableInterfaces(SubiTestCase):

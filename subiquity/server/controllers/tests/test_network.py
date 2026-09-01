@@ -63,7 +63,9 @@ class TestNetworkController(SubiTestCase):
         JsonValidator.check_schema(NetworkController.autoinstall_schema)
 
     @parameterized.expand(((4, 6), (6, 4)))
-    def test_set_static_config_preserves_other_family_default_route(self, first_version, second_version):
+    def test_set_static_config_preserves_other_family_default_route(
+        self, first_version, second_version
+    ):
         self.controller.model = NetworkModel()
         dev = NetworkDev(self.controller.model, "testdev0", "eth")
         self.controller.model.devices_by_name["testdev0"] = dev
@@ -82,7 +84,9 @@ class TestNetworkController(SubiTestCase):
         }
 
         for ip_version in (first_version, second_version):
-            self.controller.set_static_config("testdev0", ip_version, configs[ip_version])
+            self.controller.set_static_config(
+                "testdev0", ip_version, configs[ip_version]
+            )
 
         expected_routes = [
             {"to": "default", "via": configs[ip_version].gateway}
